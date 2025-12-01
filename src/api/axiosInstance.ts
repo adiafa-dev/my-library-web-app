@@ -3,11 +3,15 @@ import axios from 'axios';
 
 const apiInstance = axios.create({
   baseURL: APIConfiguration.baseUrl,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+  },
   timeout: 10000,
 });
 
-// Intercept response buat refresh token nanti (optional dulu)
+// ==========================
+// RESPONSE INTERCEPTOR
+// ==========================
 apiInstance.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -19,11 +23,22 @@ apiInstance.interceptors.response.use(
   }
 );
 
+// ==========================
+// REQUEST INTERCEPTOR
+// ==========================
 apiInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // FIX: pakai setHeader via AxiosHeaders
+    config.headers = config.headers || {};
+
+    // TS FIX → force menjadi Record<string, string>
+    (
+      config.headers as Record<string, string>
+    ).Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 

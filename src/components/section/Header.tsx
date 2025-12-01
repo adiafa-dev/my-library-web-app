@@ -3,17 +3,27 @@ import IconText from '../ui/icon-text';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
 import { useEffect, useState } from 'react';
-import { Bell, Menu, Search, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import { logout } from '@/features/auth/authSlice';
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from '../ui/sheet';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import useDebounce from '@/hooks/useDebounced';
 import { BookType } from '@/types/books.types';
+import { Icon } from '@iconify/react';
+
+// NEW: import cart hook
+import { useCart } from '@/context/cart.context';
+import { Toaster } from '../ui/sonner';
 
 const Header = () => {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
+
+  // CART CONTEXT
+  const { cart } = useCart();
+  const cartCount = cart?.items?.length ?? 0;
+
   const [searchExpand, setSearchExpand] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<BookType[]>([]);
@@ -54,6 +64,7 @@ const Header = () => {
   return (
     <header className='py-3 md:py-5 shadow-lg/25 shadow-neutral-400'>
       <div className='custom-container flex justify-between items-center'>
+        <Toaster richColors position='top-right' className='absolute' />
         {/* Logo Part */}
         <div>
           <Link to='/'>
@@ -198,19 +209,30 @@ const Header = () => {
         {/* Desktop MENU */}
         <div className='items-center gap-6 flex'>
           <div className='items-center gap-6 flex justify-center'>
-            <button className='relative items-center justify-center flex'>
-              <Bell className='h-5 w-5 text-neutral-700' />
-              <span className='absolute -right-1 -top-1 rounded-full bg-red-500 px-1 text-[10px] text-white'>
-                1
-              </span>
-            </button>
+            {/* UPDATED: cart link + dynamic badge */}
+            <Link
+              to='/cart'
+              className='relative items-center justify-center flex'
+            >
+              <Icon
+                icon='material-symbols:shopping-bag'
+                width={24}
+                className='text-neutral-950'
+              />
+              {cartCount > 0 && (
+                <span
+                  aria-live='polite'
+                  className='absolute -right-1 -top-1 rounded-full bg-red-500 px-1 text-[12px] text-white font-semibold size-4 animate-pulse'
+                >
+                  {cartCount}
+                </span>
+              )}
+            </Link>
           </div>
 
           <div className='hidden items-center gap-6 md:flex'>
             {user ? (
               <>
-                {/* Notifications */}
-
                 {/* Profile Dropdown */}
                 <div className='flex items-center gap-2'>
                   <div className='relative'>

@@ -15,6 +15,7 @@ export const loginApi = async (data: {
       id: pay.user.id,
       name: pay.user.name,
       email: pay.user.email,
+      role: pay.user.role,
     },
   };
 };
@@ -40,6 +41,7 @@ export const registerApi = async (data: {
       id: user.id,
       name: user.name ?? '',
       email: user.email,
+      role: user.role,
     },
   };
 };

@@ -16,13 +16,13 @@ export type BookType = {
   id: number;
   title: string;
   authorId: number;
-  author: {
+  author?: {
     id: number;
     name: string;
-  };
+  } | null;
   // optional fields untuk tailwind card nanti:
-  coverImage: string | null;
-  rating: number;
+  coverImage?: string | null;
+  rating?: number | null;
 };
 
 export type ReviewUser = {
@@ -37,7 +37,7 @@ export type Review = {
   userId: number;
   bookId: number;
   createdAt: string;
-  user: ReviewUser;
+  User?: ReviewUser | null;
 };
 
 export type ReviewResponse = {
@@ -60,18 +60,20 @@ export type BookDetailType = {
   totalCopies: number;
   rating: number;
   reviewCount: number;
+  categoryId: number;
 
-  author: {
+  Author?: {
     id: number;
     name: string;
-  };
+    bio?: string | null;
+  } | null;
 
-  category: {
+  Category?: {
     id: number;
     name: string;
-  };
+  } | null;
 
-  reviews?: Review[]; // optional karena detail buku belum tentu include reviews
+  Review?: Review[] | null; // optional karena detail buku belum tentu include reviews
 };
 
 export type Category = {
@@ -82,6 +84,6 @@ export type Category = {
 export type AuthorDetail = {
   id: number;
   name: string;
-  bio: string;
-  books: Book[];
+  bio?: string | null;
+  books: Book[] | null;
 };

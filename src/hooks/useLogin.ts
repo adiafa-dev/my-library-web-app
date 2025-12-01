@@ -15,8 +15,13 @@ export default function useLogin() {
       onSuccess: (data) => {
         dispatch(setCredentials(data));
         localStorage.setItem('token', data.token);
+        const role = data.user.role;
 
-        navigate('/', { replace: true });
+        if (role === 'ADMIN') {
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       },
     }
   );

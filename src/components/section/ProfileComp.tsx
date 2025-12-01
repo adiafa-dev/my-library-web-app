@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { MeResponse } from '@/types/user.types';
 import { Input } from '../ui/input';
 import { useSearchParams } from 'react-router-dom';
+import { Loan, LoanResponse } from '@/types/loan.types';
 
 export default function ProfileComp() {
   const [searchParams] = useSearchParams();
@@ -45,6 +46,15 @@ export default function ProfileComp() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
       setIsEditing(false);
+    },
+  });
+
+  // GET /api/loans/my
+  const borrowedQuery = useQuery<LoanResponse>({
+    queryKey: ['borrowed-list'],
+    queryFn: async () => {
+      const res = await axios.get('/api/loans/my');
+      return res.data as LoanResponse;
     },
   });
 
@@ -158,9 +168,87 @@ export default function ProfileComp() {
           {activeTab === 'borrowed' && (
             <>
               <h1 className='text-3xl font-bold mb-8'>Borrowed Lists</h1>
-              <p className='text-neutral-600 text-center mt-10'>
-                No borrowed books yet
-              </p>
+
+              {borrowedQuery.isLoading && (
+                <p className='text-neutral-600 text-center mt-10'>
+                  Loading borrowed books...
+                </p>
+              )}
+
+              {!borrowedQuery.isLoading &&
+                borrowedQuery.data?.data.loans.length === 0 && (
+                  <p className='text-neutral-600 text-center mt-10'>
+                    No borrowed books yet
+                  </p>
+                )}
+
+              <div className='space-y-5 mt-5'>
+                {borrowedQuery.data?.data.loans.map((loan: Loan) => {
+                  // Determine status badge
+                  const isReturned = loan.status === 'RETURNED';
+                  const isOverdue =
+                    !loan.returnedAt && new Date(loan.dueAt) < new Date();
+                  // const isActive = !isReturned && !isOverdue;
+
+                  return (
+                    <div
+                      key={loan.id}
+                      className='border rounded-xl shadow-sm p-4 flex gap-4 items-start bg-white'
+                    >
+                      {/* Cover */}
+                      <img
+                        src={
+                          loan.Book.coverImage ||
+                          '/assets/images/book-placeholder.png'
+                        }
+                        className='w-20 h-28 object-cover rounded-md border'
+                      />
+
+                      {/* Info */}
+                      <div className='flex-1 space-y-2'>
+                        {/* Status Badge */}
+                        <span
+                          className={cn(
+                            'px-3 py-1 rounded-full text-xs font-semibold w-fit',
+                            isReturned
+                              ? 'bg-green-100 text-green-700'
+                              : isOverdue
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-blue-100 text-blue-700'
+                          )}
+                        >
+                          {isReturned
+                            ? 'Returned'
+                            : isOverdue
+                            ? 'Overdue'
+                            : 'Active'}
+                        </span>
+
+                        <h2 className='text-lg font-bold'>{loan.Book.title}</h2>
+
+                        <p className='text-sm text-neutral-600'>
+                          Borrowed:{' '}
+                          {new Date(loan.borrowedAt).toLocaleDateString()}
+                        </p>
+
+                        <p className='text-sm text-neutral-600'>
+                          Due Date:{' '}
+                          <span className='font-semibold text-red-600'>
+                            {new Date(loan.dueAt).toLocaleDateString()}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Button */}
+                      <div className='flex items-center'>
+                        <Button className='px-5'>
+                          {isReturned ? 'Give Review' : 'Return Soon'}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </>
           )}
 

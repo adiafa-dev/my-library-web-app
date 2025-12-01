@@ -1,51 +1,70 @@
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
-import { Review, ReviewResponse, BookDetailType } from '@/types/books.types';
+import { Review, BookDetailType } from '@/types/books.types';
 import AutoBreadcrumbs from '../ui/auto-breadcrumbs';
 import RelatedBooks from './RelatedBooks';
 import { Icon } from '@iconify/react';
+import { AxiosError } from 'axios';
+import { toast } from 'sonner';
+import { ApiErrorResponse } from '@/types/api-error.types';
+import { useCart } from '@/context/cart.context';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/app/store';
 
-const BookDetail = () => {
+const DetailBook = () => {
+  const { addToCart } = useCart();
   const { id } = useParams();
   const bookId = Number(id);
+  const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  // 🔹 1. Fetch Detail Buku
+  // 1. Fetch Detail Buku
   const bookQuery = useQuery<BookDetailType>({
     queryKey: ['book-detail', bookId],
     queryFn: async () => {
       const res = await axios.get(`/api/books/${bookId}`);
-
       return res.data?.data as BookDetailType;
     },
+    enabled: !!bookId,
   });
 
-  // 🔹 2. Fetch Review Buku
-  const reviewQuery = useQuery<ReviewResponse>({
-    queryKey: ['reviews', bookId],
-    queryFn: async () => {
-      const res = await axios.get(
-        `/api/reviews/book/${bookId}?page=1&limit=10`
-      );
-      return res.data.data as ReviewResponse;
+  // 2. Borrow Book Mutation
+  const borrowMutation = useMutation<
+    { success: boolean; message: string; data?: unknown },
+    AxiosError<ApiErrorResponse>,
+    { bookId: number; days: number }
+  >({
+    mutationFn: (payload) =>
+      axios.post('/api/loans', payload).then((res) => res.data),
+
+    onSuccess: (res) => {
+      toast.success(res.message ?? 'Borrow Success!');
+    },
+
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Borrow failed');
     },
   });
 
-  const book = bookQuery.data;
-  const reviews = reviewQuery.data?.reviews ?? [];
-
   if (bookQuery.isLoading) return <p className='p-10'>Loading book...</p>;
-  if (!book) return <p className='p-10'>Book not found.</p>;
+  if (!bookQuery.data) return <p className='p-10'>Book not found.</p>;
+
+  const book = bookQuery.data;
+  const reviews = book.Review ?? [];
 
   return (
     <div className='custom-container pt-0 pb-5 md:py-10'>
-      <AutoBreadcrumbs lastLabel={book.title} />
+      <AutoBreadcrumbs
+        lastLabel={book.title}
+        middleLabel={book.Category?.name}
+        middleLink={`/categories/${book.Category?.id}`}
+      />
 
       {/* TOP SECTION */}
       <div className='flex flex-col md:flex-row gap-10 mb-6 md:mb-16'>
-        {/* LEFT IMAGE */}
         <div className='flex w-full md:w-1/3 items-center justify-center'>
           <img
             src={
@@ -56,17 +75,17 @@ const BookDetail = () => {
           />
         </div>
 
-        {/* RIGHT INFO */}
+        {/* Right Text Section */}
         <div className='flex-1 space-y-4'>
           <span className='px-2 py-1 text-sm font-bold border border-neutral-300 rounded-sm'>
-            {book.category?.name}
+            {book.Category?.name}
           </span>
 
           <h1 className='md:text-3xl text-2xl font-bold py-2 mb-0'>
             {book.title}
           </h1>
           <p className='md:text-md text-sm text-neutral-700 font-semibold'>
-            {book.author?.name}
+            {book.Author?.name}
           </p>
 
           {/* Stats */}
@@ -104,24 +123,47 @@ const BookDetail = () => {
 
           {/* ACTION BUTTON */}
           <div className='flex gap-4 pt-4 items-center'>
-            <Button variant='secondary' className='md:px-10 px-6 border'>
+            <Button
+              variant='secondary'
+              className='md:px-10 px-6 border'
+              onClick={() => {
+                if (!user) {
+                  toast.error('Please login first!');
+                  return navigate('/login');
+                }
+
+                addToCart(book.id);
+              }}
+            >
               Add to Cart
             </Button>
-            <Button className='md:px-10 px-6'>Borrow Book</Button>
+
+            <Button
+              className='md:px-10 px-6'
+              disabled={borrowMutation.isPending}
+              onClick={() => {
+                if (!user) {
+                  toast.error('Please login first!');
+                  return navigate('/login');
+                }
+
+                borrowMutation.mutate({ bookId: book.id, days: 7 });
+              }}
+            >
+              {borrowMutation.isPending ? 'Borrowing...' : 'Borrow Book'}
+            </Button>
 
             <button
               onClick={() => {
                 if (navigator.share) {
-                  navigator
-                    .share({
-                      title: document.title,
-                      text: 'Cek halaman ini!',
-                      url: window.location.href,
-                    })
-                    .catch((err) => console.log('Share failed:', err));
+                  navigator.share({
+                    title: document.title,
+                    text: 'Cek halaman ini!',
+                    url: window.location.href,
+                  });
                 } else {
                   navigator.clipboard.writeText(window.location.href);
-                  alert('URL copied to clipboard!');
+                  alert('URL copied!');
                 }
               }}
               className='cursor-pointer group flex justify-center items-center size-10 rounded-full border border-neutral-300 text-neutral-950 hover:border-primary-300 p-2'
@@ -147,9 +189,6 @@ const BookDetail = () => {
           </p>
         </div>
 
-        {/* LIST REVIEW */}
-        {reviewQuery.isLoading && <p className='mt-5'>Loading review...</p>}
-
         <div className='grid md:grid-cols-2 gap-6 mt-6'>
           {reviews.map((review: Review) => (
             <div
@@ -160,19 +199,17 @@ const BookDetail = () => {
                 <img
                   src='/assets/images/user-avatar.png'
                   className='md:w-16 md:h-16 w-14.5 h-14.5 rounded-full'
-                  alt={review.user.name}
                 />
-                <div className='flex flex-col justify-between md:h-14 h-12'>
+                <div className='flex flex-col'>
                   <p className='font-bold text-sm md:text-lg'>
-                    {review.user.name}
+                    {review.User?.name}
                   </p>
-                  <p className='text-sm md:text-md '>
+                  <p className='text-sm md:text-md'>
                     {new Date(review.createdAt).toLocaleString()}
                   </p>
                 </div>
               </div>
 
-              {/* Stars */}
               <div className='flex items-center gap-1 mt-2'>
                 {Array.from({ length: review.star }).map((_, i) => (
                   <Star
@@ -190,9 +227,13 @@ const BookDetail = () => {
         </div>
       </div>
 
-      <RelatedBooks categoryId={book.category.id} currentBookId={book.id} />
+      {/* RELATED */}
+      <RelatedBooks
+        categoryId={book.Category?.id ?? 0}
+        currentBookId={book.id}
+      />
     </div>
   );
 };
 
-export default BookDetail;
+export default DetailBook;

@@ -4,9 +4,15 @@ import { breadcrumbLabels } from '@/constants/breadcrumbs-label';
 
 type AutoBreadcrumbsProps = {
   lastLabel?: string; // dynamic label (misal title)
+  middleLabel?: string;
+  middleLink?: string;
 };
 
-const AutoBreadcrumbs = ({ lastLabel }: AutoBreadcrumbsProps) => {
+const AutoBreadcrumbs = ({
+  lastLabel,
+  middleLabel,
+  middleLink,
+}: AutoBreadcrumbsProps) => {
   const location = useLocation();
 
   const pathSegments = location.pathname
@@ -28,12 +34,33 @@ const AutoBreadcrumbs = ({ lastLabel }: AutoBreadcrumbsProps) => {
       {pathSegments.map((segment, index) => {
         const isLast = index === lastIndex;
 
-        // label default dari mapping
+        // Default label
         let label =
           breadcrumbLabels[segment] ||
           segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-        // override SEGMENT TERAKHIR dengan TITLE buku
+        // 1️⃣ Jika segment adalah "books", GANTI dengan category
+        if (segment === 'books') {
+          if (middleLabel && middleLink) {
+            return (
+              <div key='category' className='flex items-center gap-1'>
+                <ChevronRight className='w-4 h-4 text-neutral-950' />
+                {/* this link i used to go to the category only, because the api not provide for list books by category */}
+                <Link
+                  to='/categories'
+                  className='hover:underline text-primary-300 font-semibold'
+                >
+                  {middleLabel}
+                </Link>
+              </div>
+            );
+          }
+
+          // jika tidak ada category, tetap hilangkan
+          return null;
+        }
+
+        // 2️⃣ Label terakhir = judul buku
         if (isLast && lastLabel) {
           label = lastLabel;
         }
