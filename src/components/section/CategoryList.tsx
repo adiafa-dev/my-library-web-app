@@ -19,7 +19,7 @@ export default function CategoryList() {
           page,
           limit: 20,
           categoryId: categoryId ?? undefined,
-          rating: rating ?? undefined, // ← FIX DI SINI
+          rating: rating ?? undefined,
         },
       });
 
@@ -30,7 +30,7 @@ export default function CategoryList() {
 
   // Frontend filter rating (ini karena API nya ga provide filter untuk rating)
   const filteredBooks = (data?.books || []).filter((book: BookType) => {
-    if (rating && book.rating < rating) return false;
+    if (rating && (book.rating ?? 0) < rating) return false;
     return true;
   });
 

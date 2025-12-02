@@ -3,7 +3,7 @@ export type Book = {
   title: string;
   coverImage: string | null;
   rating: number;
-  author: { name: string };
+  Author: { name: string };
 };
 
 export type Author = {
@@ -22,7 +22,7 @@ export type BookType = {
   } | null;
   // optional fields untuk tailwind card nanti:
   coverImage?: string | null;
-  rating?: number | null;
+  rating?: number;
 };
 
 export type ReviewUser = {

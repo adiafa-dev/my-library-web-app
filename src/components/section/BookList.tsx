@@ -32,7 +32,7 @@ export default function BookList({ books, variant = 'default' }: Props) {
 
             <CardContent className='p-4 space-y-1'>
               <h3 className='font-bold truncate'>{book.title}</h3>
-              <p className='text-sm text-neutral-600'>{book.author?.name}</p>
+              <p className='text-sm text-neutral-600'>{book.Author?.name}</p>
 
               <div className='flex items-center gap-1'>
                 <Star className='w-4 h-4 text-yellow-500 fill-yellow-500' />
