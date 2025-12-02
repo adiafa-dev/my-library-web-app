@@ -56,7 +56,7 @@ export default function RelatedBooks({
                       {book.title}
                     </h3>
                     <p className='text-sm md:text-md text-neutral-700'>
-                      {book.author?.name}
+                      {book.Author?.name}
                     </p>
 
                     <div className='flex items-center text-sm md:text-md font-semibold gap-1 pt-1'>
