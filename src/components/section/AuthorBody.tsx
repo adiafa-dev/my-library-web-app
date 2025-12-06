@@ -18,7 +18,7 @@ export default function AuthorList() {
 
       const author = authors.find((a) => a.id === authorId);
 
-      return author ?? null; // <– NOT undefined
+      return author ?? null; // <– jika NOT undefined
     },
   });
 

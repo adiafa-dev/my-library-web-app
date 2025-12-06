@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,6 +28,7 @@ type LoginSchema = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [apiError, setApiError] = useState('');
+  const navigate = useNavigate();
 
   const loginMutation = useLogin();
 
@@ -43,7 +44,17 @@ const Login = () => {
     try {
       setApiError('');
 
-      await loginMutation.mutateAsync(values);
+      const result = await loginMutation.mutateAsync(values);
+
+      if (result.user.role === 'ADMIN') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+
+      setTimeout(() => {
+        loginMutation.reset();
+      }, 0);
     } catch (err: unknown) {
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const apiErr = err as {

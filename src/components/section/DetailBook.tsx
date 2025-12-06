@@ -21,7 +21,7 @@ const DetailBook = () => {
   const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
 
-  // 1. Fetch Detail Buku
+  // Fetch Book Detail
   const bookQuery = useQuery<BookDetailType>({
     queryKey: ['book-detail', bookId],
     queryFn: async () => {
@@ -31,7 +31,7 @@ const DetailBook = () => {
     enabled: !!bookId,
   });
 
-  // 2. Borrow Book Mutation
+  // Borrow Mutation
   const borrowMutation = useMutation<
     { success: boolean; message: string; data?: unknown },
     AxiosError<ApiErrorResponse>,
@@ -40,13 +40,10 @@ const DetailBook = () => {
     mutationFn: (payload) =>
       axios.post('/api/loans', payload).then((res) => res.data),
 
-    onSuccess: (res) => {
-      toast.success(res.message ?? 'Borrow Success!');
-    },
+    onSuccess: (res) => toast.success(res.message ?? 'Borrow Success!'),
 
-    onError: (err) => {
-      toast.error(err.response?.data?.message || 'Borrow failed');
-    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || 'Borrow failed'),
   });
 
   if (bookQuery.isLoading) return <p className='p-10'>Loading book...</p>;
@@ -54,6 +51,7 @@ const DetailBook = () => {
 
   const book = bookQuery.data;
   const reviews = book.Review ?? [];
+  const isOutOfStock = (book.availableCopies ?? 0) <= 0;
 
   return (
     <div className='custom-container pt-0 pb-5 md:py-10'>
@@ -71,13 +69,13 @@ const DetailBook = () => {
               book.coverImage || 'https://placehold.co/350x500?text=No+Cover'
             }
             alt={book.title}
-            className='w-2/3 md:w-full object-auto md:object-contain border-8 border-neutral-200'
+            className='w-2/3 md:w-full object-contain border-8 border-neutral-200 rounded-md shadow-sm'
           />
         </div>
 
-        {/* Right Text Section */}
+        {/* RIGHT SECTION */}
         <div className='flex-1 space-y-4'>
-          <span className='px-2 py-1 text-sm font-bold border border-neutral-300 rounded-sm'>
+          <span className='px-2 py-1 text-sm font-bold border border-neutral-300 rounded-sm bg-neutral-100'>
             {book.Category?.name}
           </span>
 
@@ -89,12 +87,12 @@ const DetailBook = () => {
           </p>
 
           {/* Stats */}
-          <div className='flex gap-5 pt-3 mb-5'>
+          <div className='flex gap-6 pt-3 mb-6'>
             <div>
               <p className='md:text-2xl text-lg font-bold'>
-                {book.totalCopies}
+                {book.availableCopies}
               </p>
-              <p className='text-sm md:text-md'>Total Copies</p>
+              <p className='class="text-sm md:text-md"'>Available Copies</p>
             </div>
 
             <div className='px-5 border-x border-neutral-300'>
@@ -114,64 +112,82 @@ const DetailBook = () => {
           </div>
 
           {/* Description */}
-          <div className='pt-4 border-t mt-4'>
+          <div className='pt-4 border-t'>
             <h3 className='text-xl font-bold mb-2'>Description</h3>
             <p className='text-sm md:text-md leading-relaxed'>
               {book.description}
             </p>
           </div>
 
-          {/* ACTION BUTTON */}
+          {/* ACTION BUTTONS */}
           <div className='flex gap-4 pt-4 items-center'>
+            {/* ADD TO CART */}
             <Button
               variant='secondary'
               className='md:px-10 px-6 border'
+              disabled={isOutOfStock}
               onClick={() => {
                 if (!user) {
                   toast.error('Please login first!');
                   return navigate('/login');
+                }
+
+                if (isOutOfStock) {
+                  toast.error('This book is currently out of stock!');
+                  return;
                 }
 
                 addToCart(book.id);
               }}
             >
-              Add to Cart
+              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </Button>
 
+            {/* BORROW BOOK */}
             <Button
               className='md:px-10 px-6'
-              disabled={borrowMutation.isPending}
+              disabled={isOutOfStock || borrowMutation.isPending}
               onClick={() => {
                 if (!user) {
                   toast.error('Please login first!');
                   return navigate('/login');
                 }
 
+                if (isOutOfStock) {
+                  toast.error('This book is currently out of stock!');
+                  return;
+                }
+
                 borrowMutation.mutate({ bookId: book.id, days: 7 });
               }}
             >
-              {borrowMutation.isPending ? 'Borrowing...' : 'Borrow Book'}
+              {borrowMutation.isPending
+                ? 'Borrowing...'
+                : isOutOfStock
+                ? 'Unavailable'
+                : 'Borrow Book'}
             </Button>
 
+            {/* SHARE BUTTON */}
             <button
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({
                     title: document.title,
-                    text: 'Cek halaman ini!',
+                    text: 'Check out this book!',
                     url: window.location.href,
                   });
                 } else {
                   navigator.clipboard.writeText(window.location.href);
-                  alert('URL copied!');
+                  toast.success('URL Copied!');
                 }
               }}
-              className='cursor-pointer group flex justify-center items-center size-10 rounded-full border border-neutral-300 text-neutral-950 hover:border-primary-300 p-2'
+              className='cursor-pointer group flex justify-center items-center size-10 rounded-full border border-neutral-300 hover:border-primary-400 p-2'
             >
               <Icon
                 icon='ic:outline-share'
-                width={32}
-                className='group-hover:text-primary-300 font-bold'
+                width={28}
+                className='group-hover:text-primary-400'
               />
             </button>
           </div>
@@ -185,7 +201,7 @@ const DetailBook = () => {
         <div className='flex items-center gap-2 mt-2'>
           <Star className='w-5 h-5 text-yellow-400 fill-yellow-400' />
           <p className='font-bold text-md md:text-xl'>
-            {book.rating.toFixed(1)} ({book.reviewCount} Ulasan)
+            {book.rating.toFixed(1)} ({book.reviewCount} Reviews)
           </p>
         </div>
 
@@ -198,7 +214,7 @@ const DetailBook = () => {
               <div className='flex items-center gap-3'>
                 <img
                   src='/assets/images/user-avatar.png'
-                  className='md:w-16 md:h-16 w-14.5 h-14.5 rounded-full'
+                  className='w-14 h-14 rounded-full'
                 />
                 <div className='flex flex-col'>
                   <p className='font-bold text-sm md:text-lg'>
@@ -227,7 +243,7 @@ const DetailBook = () => {
         </div>
       </div>
 
-      {/* RELATED */}
+      {/* RELATED BOOKS */}
       <RelatedBooks
         categoryId={book.Category?.id ?? 0}
         currentBookId={book.id}

@@ -61,6 +61,8 @@ export type BookDetailType = {
   rating: number;
   reviewCount: number;
   categoryId: number;
+  availableCopies: number;
+  stock: number;
 
   Author?: {
     id: number;

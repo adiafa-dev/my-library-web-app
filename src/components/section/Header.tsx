@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import IconText from '../ui/icon-text';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
@@ -12,17 +12,20 @@ import useDebounce from '@/hooks/useDebounced';
 import { BookType } from '@/types/books.types';
 import { Icon } from '@iconify/react';
 
-// NEW: import cart hook
+// import cart hook
 import { useCart } from '@/context/cart.context';
 import { Toaster } from '../ui/sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Header = () => {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
 
+  const token = useSelector((state: RootState) => state.auth.token);
+
   // CART CONTEXT
   const { cart } = useCart();
-  const cartCount = cart?.items?.length ?? 0;
+  const cartCount = token ? cart?.items?.length ?? 0 : 0;
 
   const [searchExpand, setSearchExpand] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -31,6 +34,9 @@ const Header = () => {
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
 
   const debouncedSearch = useDebounce(searchText, 400);
+  const qc = useQueryClient();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -58,13 +64,17 @@ const Header = () => {
   }, [debouncedSearch]);
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     dispatch(logout());
+    qc.removeQueries({ queryKey: ['cart'] });
+    qc.clear();
+    navigate('/', { replace: true });
   };
 
   return (
     <header className='py-3 md:py-5 shadow-lg/25 shadow-neutral-400'>
+      <Toaster richColors position='top-right' />
       <div className='custom-container flex justify-between items-center'>
-        <Toaster richColors position='top-right' className='absolute' />
         {/* Logo Part */}
         <div>
           <Link to='/'>
@@ -210,24 +220,23 @@ const Header = () => {
         <div className='items-center gap-6 flex'>
           <div className='items-center gap-6 flex justify-center'>
             {/* UPDATED: cart link + dynamic badge */}
-            <Link
-              to='/cart'
-              className='relative items-center justify-center flex'
-            >
-              <Icon
-                icon='material-symbols:shopping-bag'
-                width={24}
-                className='text-neutral-950'
-              />
-              {cartCount > 0 && (
-                <span
-                  aria-live='polite'
-                  className='absolute -right-1 -top-1 rounded-full bg-red-500 px-1 text-[12px] text-white font-semibold size-4 animate-pulse'
-                >
-                  {cartCount}
-                </span>
-              )}
-            </Link>
+            {token && (
+              <Link
+                to='/cart'
+                className='relative items-center justify-center flex'
+              >
+                <Icon
+                  icon='material-symbols:shopping-bag'
+                  width={24}
+                  className='text-neutral-950'
+                />
+                {cartCount > 0 && (
+                  <span className='absolute -right-1 -top-1 rounded-full bg-red-500 px-1 text-[12px] text-white font-semibold size-4 animate-pulse'>
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
 
           <div className='hidden items-center gap-6 md:flex'>

@@ -9,7 +9,7 @@ export type CartItemBook = {
 export type CartItem = {
   id: number;
   bookId: number;
-  quantity: number;
+  qty: number;
   Book?: CartItemBook | null;
 };
 

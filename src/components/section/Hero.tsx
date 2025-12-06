@@ -10,7 +10,7 @@ import {
 import { heroesData } from '@/constants/heroes-data';
 
 const Hero = () => {
-  // FIX: Embla API can be undefined initially
+  // Embla API can be undefined initially
   const [carouselApi, setCarouselApi] = useState<EmblaCarouselType | undefined>(
     undefined
   );

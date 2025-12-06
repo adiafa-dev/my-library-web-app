@@ -8,6 +8,7 @@ import BookDetailPage from './pages/books/BookDetailPage';
 import CategoryPage from './pages/categories/CategoryPage';
 import AuthorPage from './pages/authors/AuthorPage';
 import ProfilePage from './pages/profile/ProfilePage';
+import CartPage from './pages/cart/CartPage';
 
 export default function App() {
   return (
@@ -18,12 +19,14 @@ export default function App() {
       <Route path='/register' element={<Register />} />
       <Route path='/books/:id' element={<BookDetailPage />} />
       <Route path='/categories' element={<CategoryPage />} />
+      <Route path='/category' element={<CategoryPage />} />
       <Route path='/authors/:id/books' element={<AuthorPage />} />
 
       {/* Protected */}
       <Route element={<ProtectedRoute />}>
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/profile' element={<ProfilePage />} />
+        <Route path='/cart' element={<CartPage />} />
       </Route>
 
       {/* Default */}

@@ -3,31 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/api/axiosInstance';
 import { AxiosError } from 'axios';
 import type { ApiErrorResponse } from '@/types/api-error.types';
+import { CartData } from '@/types/cart.types';
 
 // ======================
 // TYPES
 // ======================
-
-export type CartBook = {
-  id: number;
-  title: string;
-  coverImage?: string | null;
-  Author?: { id: number; name: string } | null;
-  Category?: { id: number; name: string } | null;
-};
-
-export type CartItem = {
-  id: number;
-  bookId: number;
-  quantity: number;
-  Book?: CartBook | null;
-};
-
-export type CartData = {
-  cartId: number;
-  items: CartItem[];
-  grandTotal: number;
-};
 
 export type CartContextValue = {
   cart: CartData | undefined;
@@ -63,13 +43,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const qc = useQueryClient();
 
   // ambil token — dipakai buat enabled query
-  const token = localStorage.getItem('token');
+  const getToken = () => localStorage.getItem('token');
+  const token = getToken();
 
   // ===========================
   // GET CART
   // ===========================
   const cartQuery = useQuery<CartData>({
-    queryKey: ['cart'],
+    queryKey: ['cart', token],
 
     // HANYA fetch cart jika sudah login
     enabled: !!token,
@@ -99,7 +80,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cart'] }),
 
     onError: (err) => {
-      console.log('ADD TO CART ERROR:', err.response?.data);
+      console.log('STATUS:', err.response?.status);
+      console.log('DETAIL ERROR:', err.response?.data);
+      console.log('FULL ERROR:', err);
     },
   });
 

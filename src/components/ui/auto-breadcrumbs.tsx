@@ -39,7 +39,7 @@ const AutoBreadcrumbs = ({
           breadcrumbLabels[segment] ||
           segment.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-        // 1️⃣ Jika segment adalah "books", GANTI dengan category
+        // Jika segment adalah "books", GANTI dengan category
         if (segment === 'books') {
           if (middleLabel && middleLink) {
             return (
@@ -60,7 +60,7 @@ const AutoBreadcrumbs = ({
           return null;
         }
 
-        // 2️⃣ Label terakhir = judul buku
+        // Label terakhir = judul buku
         if (isLast && lastLabel) {
           label = lastLabel;
         }
