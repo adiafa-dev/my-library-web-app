@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Icon } from '@iconify/react';
 import { toast } from 'sonner';
 
 import { useCart } from '@/context/cart.context';
 import useBookDetails from '@/hooks/useBookDetails';
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQty, clearCart, refetch } = useCart();
+  const { cart, removeFromCart, clearCart, refetch } = useCart();
   const rawItems = cart?.items;
 
   const items = useMemo(() => rawItems ?? [], [rawItems]);
@@ -53,12 +52,6 @@ export default function CartPage() {
   };
 
   const selected = [...selectedSet];
-
-  const totalBooks = selected.reduce((sum, id) => {
-    const item = items.find((x) => x.id === id);
-    const qty = item?.qty ?? 0;
-    return sum + qty;
-  }, 0);
 
   // ============================
   // Event Handlers
@@ -127,7 +120,6 @@ export default function CartPage() {
 
             {items.map((item) => {
               const book = booksMap[item.bookId];
-              const qty = Number(item.qty ?? 1);
 
               return (
                 <div key={item.id} className='p-4 flex gap-4 items-start'>
@@ -149,58 +141,20 @@ export default function CartPage() {
 
                   {/* Info */}
                   <div className='flex-1'>
-                    <div className='flex justify-between items-start'>
-                      <div>
-                        <p className='text-xs text-neutral-400'>
-                          {book?.Category?.name}
-                        </p>
-                        <p className='font-semibold'>{book?.title}</p>
-                        <p className='text-sm text-neutral-500'>
-                          {book?.Author?.name}
-                        </p>
-                      </div>
-
-                      {/* Price */}
-                      <div className='text-right'>
-                        <p className='font-bold text-lg'></p>
-                        <p className='text-xs text-neutral-500'></p>
-                      </div>
+                    <div className='flex flex-col justify-between items-start'>
+                      <p className='px-2 py-1 text-sm font-bold border border-neutral-300 rounded-sm bg-neutral-100'>
+                        {book?.Category?.name}
+                      </p>
+                      <p className='font-bold py-1 md:text-lg text-md'>
+                        {book?.title}
+                      </p>
+                      <p className='text-sm md:text-md  text-neutral-500'>
+                        {book?.Author?.name}
+                      </p>
                     </div>
 
                     {/* Qty Controls */}
                     <div className='flex items-center gap-4 mt-4'>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='ghost'
-                          onClick={async () => {
-                            const next = Math.max(1, qty - 1);
-                            await updateQty({
-                              itemId: item.id,
-                              quantity: next,
-                            });
-                            refetch();
-                          }}
-                        >
-                          <Icon icon='mdi:minus' width={18} />
-                        </Button>
-
-                        <div className='px-3 py-1 border rounded'>{qty}</div>
-
-                        <Button
-                          variant='ghost'
-                          onClick={async () => {
-                            const next = qty + 1;
-                            await updateQty({
-                              itemId: item.id,
-                              quantity: next,
-                            });
-                            refetch();
-                          }}
-                        >
-                          <Icon icon='mdi:plus' width={18} />
-                        </Button>
-                      </div>
-
                       <button
                         className='ml-auto text-sm text-red-600 hover:underline'
                         onClick={() => handleRemove(item.id)}
@@ -226,14 +180,13 @@ export default function CartPage() {
           <div className='bg-white rounded-2xl p-6 shadow sticky top-20'>
             <h2 className='font-bold text-xl mb-4'>Loan Summary</h2>
 
-            <div className='flex justify-between mb-2'>
-              <span className='text-neutral-600'>Selected Items</span>
-              <span className='font-semibold'>{selected.length}</span>
-            </div>
-
-            <div className='flex justify-between mb-6'>
-              <span className='text-neutral-600'>Total Books</span>
-              <span className='font-semibold'>{totalBooks}</span>
+            <div className='flex justify-between mb-4'>
+              <span className='text-neutral-500 text-sm md:text-md font-medium'>
+                Total Books
+              </span>
+              <span className='font-semibold text-sm md:text-md '>
+                {selected.length} items
+              </span>
             </div>
 
             <Button
