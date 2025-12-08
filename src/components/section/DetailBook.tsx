@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import axios from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
@@ -7,15 +7,13 @@ import { Review, BookDetailType } from '@/types/books.types';
 import AutoBreadcrumbs from '../ui/auto-breadcrumbs';
 import RelatedBooks from './RelatedBooks';
 import { Icon } from '@iconify/react';
-import { AxiosError } from 'axios';
 import { toast } from 'sonner';
-import { ApiErrorResponse } from '@/types/api-error.types';
 import { useCart } from '@/context/cart.context';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
 
 const DetailBook = () => {
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { id } = useParams();
   const bookId = Number(id);
   const navigate = useNavigate();
@@ -32,19 +30,19 @@ const DetailBook = () => {
   });
 
   // Borrow Mutation
-  const borrowMutation = useMutation<
-    { success: boolean; message: string; data?: unknown },
-    AxiosError<ApiErrorResponse>,
-    { bookId: number; days: number }
-  >({
-    mutationFn: (payload) =>
-      axios.post('/api/loans', payload).then((res) => res.data),
+  // const borrowMutation = useMutation<
+  //   { success: boolean; message: string; data?: unknown },
+  //   AxiosError<ApiErrorResponse>,
+  //   { bookId: number; days: number }
+  // >({
+  //   mutationFn: (payload) =>
+  //     axios.post('/api/loans', payload).then((res) => res.data),
 
-    onSuccess: (res) => toast.success(res.message ?? 'Borrow Success!'),
+  //   onSuccess: (res) => toast.success(res.message ?? 'Borrow Success!'),
 
-    onError: (err) =>
-      toast.error(err.response?.data?.message || 'Borrow failed'),
-  });
+  //   onError: (err) =>
+  //     toast.error(err.response?.data?.message || 'Borrow failed'),
+  // });
 
   if (bookQuery.isLoading) return <p className='p-10'>Loading book...</p>;
   if (!bookQuery.data) return <p className='p-10'>Book not found.</p>;
@@ -146,7 +144,7 @@ const DetailBook = () => {
             {/* BORROW BOOK */}
             <Button
               className='md:px-10 px-6'
-              disabled={isOutOfStock || borrowMutation.isPending}
+              disabled={isOutOfStock}
               onClick={() => {
                 if (!user) {
                   toast.error('Please login first!');
@@ -158,14 +156,17 @@ const DetailBook = () => {
                   return;
                 }
 
-                borrowMutation.mutate({ bookId: book.id, days: 7 });
+                // Ambil semua bookId dari cart
+                const cartItemIds = cart?.items?.map((i) => i.bookId) ?? [];
+
+                // Gabungkan + hapus duplikat
+                const allIds = [...new Set([book.id, ...cartItemIds])];
+
+                // Kirim semuanya ke checkout
+                navigate(`/checkout?ids=${allIds.join(',')}`);
               }}
             >
-              {borrowMutation.isPending
-                ? 'Borrowing...'
-                : isOutOfStock
-                ? 'Unavailable'
-                : 'Borrow Book'}
+              {isOutOfStock ? 'Unavailable' : 'Borrow Book'}
             </Button>
 
             {/* SHARE BUTTON */}

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { useCart } from '@/context/cart.context';
 import useBookDetails from '@/hooks/useBookDetails';
+import { useNavigate } from 'react-router-dom';
 
 export default function CartPage() {
   const { cart, removeFromCart, clearCart, refetch } = useCart();
@@ -17,6 +18,7 @@ export default function CartPage() {
 
   // Fetch book detail for each item
   const { booksMap, isLoading: booksLoading } = useBookDetails(bookIds);
+  const navigate = useNavigate();
 
   // ============================
   // SELECTION WITHOUT useEffect
@@ -68,11 +70,20 @@ export default function CartPage() {
 
   const handleBorrow = () => {
     if (selected.length === 0) {
-      toast.error('Please select at least one item.');
+      toast.error('Please select at least one book.');
       return;
     }
 
-    toast.success('Borrow request created!');
+    const selectedItems = items.filter((i) => selectedSet.has(i.id));
+
+    navigate('/checkout', {
+      state: {
+        fromCart: selectedItems.map((item) => ({
+          bookId: item.bookId,
+          qty: item.qty,
+        })),
+      },
+    });
   };
 
   // ============================
